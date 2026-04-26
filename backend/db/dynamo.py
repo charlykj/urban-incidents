@@ -1,17 +1,28 @@
 import boto3
 import os
+from dotenv import load_dotenv
 
-DYNAMODB_ENDPOINT = os.getenv("DYNAMODB_ENDPOINT", "http://localhost:8000")
+load_dotenv()
+
+DYNAMODB_ENDPOINT = os.getenv("DYNAMODB_ENDPOINT", None)
 AWS_REGION = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
 
 def get_dynamodb():
-    return boto3.resource(
-        "dynamodb",
-        region_name=AWS_REGION,
-        endpoint_url=DYNAMODB_ENDPOINT,
-        aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "local"),
-        aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "local"),
-    )
+    if DYNAMODB_ENDPOINT:
+        return boto3.resource(
+            "dynamodb",
+            region_name=AWS_REGION,
+            endpoint_url=DYNAMODB_ENDPOINT,
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "local"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "local"),
+        )
+    else:
+        return boto3.resource(
+            "dynamodb",
+            region_name=AWS_REGION,
+            aws_access_key_id=os.getenv("AWS_ACCESS_KEY_ID"),
+            aws_secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY"),
+        )
 
 def get_table():
     db = get_dynamodb()
@@ -42,13 +53,11 @@ def create_table_if_not_exists():
                 "IndexName": "GSI-categoria",
                 "KeySchema": [{"AttributeName": "categoria", "KeyType": "HASH"}],
                 "Projection": {"ProjectionType": "ALL"},
-                "OnDemandThroughput": {"MaxReadRequestUnits": 40, "MaxWriteRequestUnits": 40},
             },
             {
                 "IndexName": "GSI-estado",
                 "KeySchema": [{"AttributeName": "estado", "KeyType": "HASH"}],
                 "Projection": {"ProjectionType": "ALL"},
-                "OnDemandThroughput": {"MaxReadRequestUnits": 40, "MaxWriteRequestUnits": 40},
             },
         ],
         BillingMode="PAY_PER_REQUEST",
